@@ -4,9 +4,9 @@ require 'pry'
 class Scraper
 
   def self.scrape_index_page(index_url)
-
     doc = Nokogiri::HTML(open(index_url))
     students = Array.new
+    
     doc.css("div.roster-cards-container").each do |card|
       card.css(".student-card a").each do |student|
         name = student.css(".student-name").text
@@ -20,24 +20,23 @@ class Scraper
 
   def self.scrape_profile_page(profile_url)
     doc = Nokogiri::HTML(open(profile_url))
+    student = Hash.new
 
-    student_details = {}
-
-    doc.css("div.social-icon-container").each do |social_media|
-      if social_media.include?("twitter")
-        student_details[:twitter] = doc.css("div.social-icon-containter")[0]["href"]
-      elsif social_media.include?("linkedin")
-        student_details[:linkedin] = doc.css("div.social-icon-containter")[0]["href"]
-      elsif social_media.include?("github")
-        student_details[:github] = doc.css("div.social-icon-containter")[0]["href"]
-      elsif social_media.include?(".com")
-        student_details[:blog]= doc.css("div.social-icon-container a")[0]["href"]
+    social_icons = doc.css("div.social-icon-container a").collect {|x| x.attribute("href").value}
+    social_icons.each do |social_icon|
+      if social_icon.include?("linkedin")
+        student[:linkedin] = social_icon
+      elsif social_icon.include?("github")
+        student[:github] = social_icon
+      elsif social_icon.include?("twitter")
+        student[:twitter] = social_icon
+      else
+        student[:blog] = social_icon
       end
     end
-    student_details[:profile_quote] = doc.css("div.vitals-text-container.profile-quote").text
-    student_details[:bio] = doc.css("div.details-container.description-holder p").text
-
-    student_details
+    student[:bio] = doc.css("div.bio-content.content-holder div.description-holder p").text
+    student[:profile_quote] = doc.css(".profile-quote").text
+    student
   end
 
 end
